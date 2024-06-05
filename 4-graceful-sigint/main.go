@@ -13,10 +13,32 @@
 
 package main
 
+import (
+	"fmt"
+	"os"
+	"os/signal"
+)
+
 func main() {
 	// Create a process
 	proc := MockProcess{}
+	notify := make(chan os.Signal, 1)
+
+	signal.Notify(notify, os.Interrupt)
 
 	// Run the process (blocking)
-	proc.Run()
+	go proc.Run()
+
+	stopping := false
+
+	for signal := range notify {
+		if !stopping {
+			stopping = true
+			fmt.Println("Stopping with signal: ", signal)
+			go proc.Stop()
+		} else {
+			panic("Double interrupt")
+		}
+
+	}
 }
